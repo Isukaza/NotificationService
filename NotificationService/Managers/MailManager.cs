@@ -21,6 +21,22 @@ public class MailManager : IMailManager
 
     #region Template
 
+    public async Task<EmailApiResponse<GetEmailTemplateResponse>> GetTemplateAsync(string templateName)
+    {
+        var request = new GetEmailTemplateRequest
+        {
+            TemplateName = templateName
+        };
+
+        return await ExecuteSesRequestAsync(() => _sesClient.GetEmailTemplateAsync(request));
+    }
+
+    public async Task<EmailApiResponse<ListEmailTemplatesResponse>> GetAllTemplatesAsync()
+    {
+        var request = new ListEmailTemplatesRequest();
+        return await ExecuteSesRequestAsync(() => _sesClient.ListEmailTemplatesAsync(request));
+    }
+
     public async Task<EmailApiResponse<CreateEmailTemplateResponse>> CreateTemplateAsync(
         Models.Request.CreateEmailTemplateRequest createRequest)
     {

@@ -5,6 +5,10 @@ namespace NotificationService.Managers.Interfaces;
 
 public interface IMailManager
 {
+    Task<EmailApiResponse<GetEmailTemplateResponse>> GetTemplateAsync(string templateName);
+
+    Task<EmailApiResponse<ListEmailTemplatesResponse>> GetAllTemplatesAsync();
+
     Task<EmailApiResponse<CreateEmailTemplateResponse>> CreateTemplateAsync(
         Models.Request.CreateEmailTemplateRequest request);
 

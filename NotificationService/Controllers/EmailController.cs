@@ -16,6 +16,43 @@ namespace NotificationService.Controllers;
 public class EmailController(IMailManager mailManager) : Controller
 {
     /// <summary>
+    /// Retrieves the email template by its name.
+    /// </summary>
+    /// <param name="templateName">The name of the template to retrieve.</param>
+    /// <returns>Returns the content of the email template.</returns>
+    /// <response code="200">Template received successfully.</response>
+    /// <response code="400">The request is invalid, such as when the template name is missing.</response>
+    /// <response code="500">An error occurred while retrieving the template.</response>
+    [HttpGet("get-email-template")]
+    [ProducesResponseType(typeof(EmailTemplateContent), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetEmailTemplate([Required] string templateName)
+    {
+        var result = await mailManager.GetTemplateAsync(templateName);
+        return result.Response.HttpStatusCode == HttpStatusCode.OK
+            ? await StatusCodes.Status200OK
+                .ResultState("Template received successfully", result.Response.TemplateContent)
+            : await result.Response.HttpStatusCode.ResultState(result.ErrorMessage);
+    }
+
+    /// <summary>
+    /// Retrieves all email templates.
+    /// </summary>
+    /// <returns>Returns the metadata of all available email templates.</returns>
+    /// <response code="200">List of existing templates received successfully.</response>
+    /// <response code="400">The request is invalid.</response>
+    /// <response code="500">An error occurred while retrieving the templates.</response>
+    [HttpGet("get-all-email-template")]
+    [ProducesResponseType(typeof(List<EmailTemplateMetadata>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllEmailTemplate()
+    {
+        var result = await mailManager.GetAllTemplatesAsync();
+        return result.Response.HttpStatusCode == HttpStatusCode.OK
+            ? await StatusCodes.Status200OK
+                .ResultState("Name of existing templates received", result.Response.TemplatesMetadata)
+            : await StatusCodes.Status500InternalServerError.ResultState();
+    }
+
+    /// <summary>
     /// Adds a new email template to the AWS SES.
     /// </summary>
     /// <param name="request">The details of the email template to be created (name, subject, and HTML content).</param>
