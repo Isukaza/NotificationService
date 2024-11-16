@@ -16,6 +16,7 @@ public static class MailConfig
 
     public static class Values
     {
+        public static readonly string Mail;
         public static readonly RegionEndpoint RegionEndpoint;
         public static readonly string AwsAccessKeyId;
         public static readonly string AwsSecretAccessKey;
@@ -23,6 +24,7 @@ public static class MailConfig
         static Values()
         {
             var configuration = ConfigBase.GetConfiguration();
+            Mail = configuration[Keys.MailKey];
             RegionEndpoint = RegionEndpoint.GetBySystemName(configuration[Keys.RegionKey]);
             AwsAccessKeyId = configuration[Keys.AwsAccessKeyIdKey];
             AwsSecretAccessKey = configuration[Keys.AwsSecretAccessKeyKey];
