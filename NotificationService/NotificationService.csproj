@@ -27,6 +27,7 @@
     <ItemGroup>
       <ProjectReference Include="..\Helpers\Helpers.csproj" />
       <ProjectReference Include="..\NotificationService.DAL\NotificationService.DAL.csproj" />
+      <ProjectReference Include="..\RabbitMQ.Messaging\RabbitMQ.Messaging.csproj" />
     </ItemGroup>
 
 </Project>
