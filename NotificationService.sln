@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Helpers", "Helpers\Helpers.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationService.DAL", "NotificationService.DAL\NotificationService.DAL.csproj", "{33D00818-C515-403A-AD89-B091D43526E3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMQ.Messaging", "RabbitMQ.Messaging\RabbitMQ.Messaging.csproj", "{F26F4476-8232-49F2-9F8F-194C1BB225C3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{33D00818-C515-403A-AD89-B091D43526E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{33D00818-C515-403A-AD89-B091D43526E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{33D00818-C515-403A-AD89-B091D43526E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F26F4476-8232-49F2-9F8F-194C1BB225C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F26F4476-8232-49F2-9F8F-194C1BB225C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F26F4476-8232-49F2-9F8F-194C1BB225C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F26F4476-8232-49F2-9F8F-194C1BB225C3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
