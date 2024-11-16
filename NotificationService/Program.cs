@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
+using RabbitMQ.Messaging;
+
 using NotificationService.Configuration;
 using NotificationService.DAL.Roles;
 using NotificationService.Managers;
@@ -58,6 +60,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
         };
     });
+
+builder.Services.AddSingleton<IRabbitMqConnection>(
+    new RabbitMqConnection(
+        RabbitMqConfig.Values.Host,
+        RabbitMqConfig.Values.Queue,
+        RabbitMqConfig.Values.Username,
+        RabbitMqConfig.Values.Password,
+        RabbitMqConfig.Values.Port,
+        RabbitMqConfig.Values.Threads,
+        RabbitMqConfig.Values.PrefetchMessages)
+    );
+
+builder.Services.AddHostedService<RabbitMqListenerManager>();
+builder.Services.AddSingleton<IMessageReceiveManager, MessageReceiveManager>(serviceProvider =>
+{
+    var connection = serviceProvider.GetRequiredService<IRabbitMqConnection>();
+    var mailManager = new MailManager();
+    return new MessageReceiveManager(connection, mailManager);
+});
 
 builder.Services.AddScoped<IMailManager, MailManager>();
 

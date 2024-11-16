@@ -1,9 +1,14 @@
 using System.Net;
-using NotificationService.Configuration;
-using NotificationService.Managers.Interfaces;
+
 using Amazon.Runtime;
 using Amazon.SimpleEmailV2;
 using Amazon.SimpleEmailV2.Model;
+
+using RabbitMQ.Messaging.Models;
+
+using NotificationService.Configuration;
+using NotificationService.DAL.Models;
+using NotificationService.Managers.Interfaces;
 using NotificationService.Models.Response;
 
 namespace NotificationService.Managers;
@@ -20,6 +25,26 @@ public class MailManager : IMailManager
     #endregion
 
     #region Template
+
+    public async Task<EmailApiResponse<SendEmailResponse>> SendEmailAsync(UserUpdateMessage message)
+    {
+        var template = GenerateConfirmationContent(message);
+        var request = new SendEmailRequest
+        {
+            FromEmailAddress = MailConfig.Values.Mail,
+            Destination = new Destination { ToAddresses = [message.UserEmail] },
+            Content = new EmailContent
+            {
+                Template = new Template
+                {
+                    TemplateName = message.ChangeType.ToString(),
+                    TemplateData = template
+                }
+            }
+        };
+
+        return await ExecuteSesRequestAsync(() => _sesClient.SendEmailAsync(request));
+    }
 
     public async Task<EmailApiResponse<GetEmailTemplateResponse>> GetTemplateAsync(string templateName)
     {
@@ -66,6 +91,40 @@ public class MailManager : IMailManager
     #endregion
 
     #region Private Methods
+
+    private static string GenerateConfirmationContent(UserUpdateMessage message) =>
+        message.ChangeType switch
+        {
+            TokenType.RegistrationConfirmation =>
+                $"{{\"username\":\"{message.UserName}\", " +
+                $"\"confirmationLink\":\"{message.ConfirmationLink}\"}}",
+
+            TokenType.PasswordReset =>
+                $"{{\"username\":\"{message.UserName}\", " +
+                $"\"confirmationLink\":\"{message.ConfirmationLink}\"}}",
+
+            TokenType.PasswordChange =>
+                $"{{\"username\":\"{message.UserName}\", " +
+                $"\"confirmationLink\":\"{message.ConfirmationLink}\"}}",
+
+            TokenType.UsernameChange =>
+                $"{{\"newUsername\":\"{message.NewValue}\", " +
+                $"\"oldUsername\":\"{message.OldValue}\", " +
+                $"\"confirmationLink\":\"{message.ConfirmationLink}\"}}",
+
+            TokenType.EmailChangeNew =>
+                $"{{\"username\":\"{message.UserName}\", " +
+                $"\"newEmail\":\"{message.NewValue}\", " +
+                $"\"confirmationLink\":\"{message.ConfirmationLink}\"}}",
+
+            TokenType.EmailChangeOld =>
+                $"{{\"username\":\"{message.UserName}\", " +
+                $"\"newEmail\":\"{message.NewValue}\", " +
+                $"\"oldEmail\":\"{message.OldValue}\", " +
+                $"\"confirmationLink\":\"{message.ConfirmationLink}\"}}",
+
+            _ => string.Empty
+        };
 
     private static async Task<EmailApiResponse<T>> ExecuteSesRequestAsync<T>(Func<Task<T>> action)
         where T : AmazonWebServiceResponse, new()

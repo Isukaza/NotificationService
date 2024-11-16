@@ -1,12 +1,16 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net;
-using Amazon.SimpleEmailV2.Model;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NotificationService.DAL.Roles;
+
+using Amazon.SimpleEmailV2.Model;
+
+using RabbitMQ.Messaging.Models;
+
 using Helpers;
+using NotificationService.DAL.Roles;
 using NotificationService.Managers.Interfaces;
-using CreateEmailTemplateRequest = NotificationService.Models.Request.CreateEmailTemplateRequest;
 
 namespace NotificationService.Controllers;
 
@@ -15,6 +19,16 @@ namespace NotificationService.Controllers;
 [Authorize(Policy = nameof(RolePolicy.RequireAnyAdmin))]
 public class EmailController(IMailManager mailManager) : Controller
 {
+    [HttpPost("send-email")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    public async Task<IActionResult> SendEmail([FromBody] UserUpdateMessage message)
+    {
+        var result = await mailManager.SendEmailAsync(message);
+        return result.Response.HttpStatusCode == HttpStatusCode.OK
+            ? await StatusCodes.Status200OK.ResultState("Email send successfully", result.Response)
+            : await result.Response.HttpStatusCode.ResultState(result.ErrorMessage);
+    }
+
     /// <summary>
     /// Retrieves the email template by its name.
     /// </summary>
@@ -62,7 +76,7 @@ public class EmailController(IMailManager mailManager) : Controller
     /// <response code="500">An error occurred during the creation of the template.</response>
     [HttpPut("add-email-template")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-    public async Task<IActionResult> AddEmailTemplate([FromBody] CreateEmailTemplateRequest request)
+    public async Task<IActionResult> AddEmailTemplate([FromBody] Models.Request.CreateEmailTemplateRequest request)
     {
         var result = await mailManager.CreateTemplateAsync(request);
         return result.Response.HttpStatusCode == HttpStatusCode.OK
