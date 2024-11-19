@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 
 using RabbitMQ.Messaging;
 
+using Helpers;
 using NotificationService.Configuration;
 using NotificationService.DAL.Roles;
 using NotificationService.Managers;
@@ -15,6 +16,12 @@ using NotificationService.Managers.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var configFile = DataHelper.GetConfigurationFileForMode(builder.Environment.IsDevelopment());
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile(configFile, optional: false);
+
+builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging")); 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
@@ -41,6 +48,10 @@ builder.Services.AddCors(options =>
 });
 
 #endif
+
+JwtConfig.Values.Initialize(builder.Configuration, builder.Environment.IsDevelopment());
+MailConfig.Values.Initialize(builder.Configuration, builder.Environment.IsDevelopment());
+RabbitMqConfig.Values.Initialize(builder.Configuration, builder.Environment.IsDevelopment());
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(nameof(RolePolicy.RequireAnyAdmin), policy =>
