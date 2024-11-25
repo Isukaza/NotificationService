@@ -5,12 +5,13 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 COPY ["../Helpers/Helpers.csproj", "Helpers/"]
+COPY ["../RabbitMQ.Messaging/RabbitMQ.Messaging.csproj", "RabbitMQ.Messaging/"]
 COPY ["../NotificationService.DAL/NotificationService.DAL.csproj", "NotificationService.DAL/"]
 COPY ["../NotificationService/NotificationService.csproj", "NotificationService/"]
 
 RUN dotnet restore "NotificationService/NotificationService.csproj"
 
-COPY . .
+COPY .. .
 
 WORKDIR "/src/NotificationService"
 RUN dotnet build "NotificationService.csproj" -c Release -o /app/build

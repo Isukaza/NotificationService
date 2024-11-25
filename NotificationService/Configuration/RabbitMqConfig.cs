@@ -1,3 +1,5 @@
+using Helpers;
+
 namespace NotificationService.Configuration;
 
 public static class RabbitMqConfig
@@ -8,7 +10,7 @@ public static class RabbitMqConfig
         public const string HostKey = GroupName + ":Host";
         public const string QueueKey = GroupName + ":Queue";
         public const string PortKey = GroupName + ":Port";
-        public const string UserKey = GroupName + ":Username";
+        public const string UsernameKey = GroupName + ":Username";
         public const string PasswordKey = GroupName + ":Password";
         public const string ThreadsKey = GroupName + ":Threads";
         public const string PrefetchMessagesKey = GroupName + ":PrefetchMessages";
@@ -17,42 +19,50 @@ public static class RabbitMqConfig
 
     public static class Values
     {
-        public static readonly string Host;
-        public static readonly string Queue;
-        public static readonly int Port;
-        public static readonly string Username;
-        public static readonly string Password;
-        public static readonly ushort Threads;
-        public static readonly ushort PrefetchMessages;
-        public static readonly TimeSpan MessageDelay;
+        public static string Host { get; private set; }
+        public static string Queue { get; private set; }
+        public static int Port { get; private set; }
+        public static string Username { get; private set; }
+        public static string Password { get; private set; }
+        public static ushort Threads { get; private set; }
+        public static ushort PrefetchMessages { get; private set; }
+        public static TimeSpan MessageDelay { get; private set; }
 
-        static Values()
+        public static void Initialize(IConfiguration configuration, bool isDevelopment)
         {
-            var configuration = ConfigBase.GetConfiguration();
-            Host = configuration[Keys.HostKey];
-            Queue = configuration[Keys.QueueKey];
+            Host = DataHelper.GetRequiredString(configuration[Keys.HostKey], Keys.HostKey);
+            Queue = DataHelper.GetRequiredString(configuration[Keys.QueueKey], Keys.QueueKey);
 
-            Port = int.TryParse(configuration[Keys.PortKey], out var port)
-                ? port
-                : 5672;
+            Port = DataHelper.GetRequiredInt(configuration[Keys.PortKey], Keys.PortKey, 1, 65535);
 
-            Username = configuration[Keys.UserKey];
-            Password = configuration[Keys.PasswordKey];
+            var rawUsername = isDevelopment
+                ? configuration[Keys.UsernameKey]
+                : Environment.GetEnvironmentVariable("RABBITMQ_USER");
+            Username = DataHelper.GetRequiredString(rawUsername, Keys.UsernameKey, 3);
 
-            Threads = ushort.TryParse(configuration[Keys.ThreadsKey], out var threads)
-                ? threads
-                : (ushort)1;
+            var rawPassword = isDevelopment
+                ? configuration[Keys.PasswordKey]
+                : Environment.GetEnvironmentVariable("RABBITMQ_PASS");
+            Password = DataHelper.GetRequiredString(rawPassword, Keys.PasswordKey, 32);
 
-            PrefetchMessages =
-                ushort.TryParse(configuration[Keys.PrefetchMessagesKey], out var prefetchMessages)
-                    ? prefetchMessages
-                    : (ushort)0;
+            Threads = DataHelper.GetRequiredUShort(
+                configuration[Keys.ThreadsKey],
+                Keys.ThreadsKey,
+                1,
+                8);
+            
+            PrefetchMessages = DataHelper.GetRequiredUShort(
+                configuration[Keys.PrefetchMessagesKey],
+                Keys.PrefetchMessagesKey,
+                1,
+                100);
 
-            MessageDelay = TimeSpan.FromMilliseconds(
-                int.TryParse(configuration[Keys.MessageDelayKey], out var delay) && delay > 0
-                    ? delay
-                    : 0
-            );
+            var valueMessageDelay = DataHelper.GetRequiredInt(
+                configuration[Keys.MessageDelayKey],
+                Keys.MessageDelayKey,
+                0,
+                10000);
+            MessageDelay = TimeSpan.FromMilliseconds(valueMessageDelay);
         }
     }
 }

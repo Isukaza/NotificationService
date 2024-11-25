@@ -1,4 +1,5 @@
 using System.Text;
+using Helpers;
 using Microsoft.IdentityModel.Tokens;
 
 namespace NotificationService.Configuration;
@@ -15,17 +16,21 @@ public static class JwtConfig
 
     public static class Values
     {
-        public static readonly string Issuer;
-        public static readonly string Audience;
-        public static readonly SymmetricSecurityKey Key;
+        public static string Issuer { get; private set; }
+        public static string Audience { get; private set; }
+        public static SymmetricSecurityKey Key { get; private set; }
 
-        static Values()
+        public static void Initialize(IConfiguration configuration, bool isDevelopment)
         {
-            var configuration = ConfigBase.GetConfiguration();
-
-            Issuer = configuration[Keys.IssuerKey];
-            Audience = configuration[Keys.AudienceKey];
-            Key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration[Keys.KeyKey] ?? string.Empty));
+            Issuer = DataHelper.GetRequiredString(configuration[Keys.IssuerKey], Keys.IssuerKey);
+            Audience = DataHelper.GetRequiredString(configuration[Keys.AudienceKey], Keys.AudienceKey);
+            
+            var rawJwtKey = isDevelopment
+                ? configuration[Keys.KeyKey]
+                : Environment.GetEnvironmentVariable("JWT_KEY");
+            
+            var keyString = DataHelper.GetRequiredString(rawJwtKey, Keys.KeyKey, 32);
+            Key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyString));
         }
     }
 }

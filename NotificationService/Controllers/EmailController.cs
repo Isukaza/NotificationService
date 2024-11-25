@@ -63,7 +63,7 @@ public class EmailController(IMailManager mailManager) : Controller
         return result.Response.HttpStatusCode == HttpStatusCode.OK
             ? await StatusCodes.Status200OK
                 .ResultState("Name of existing templates received", result.Response.TemplatesMetadata)
-            : await StatusCodes.Status500InternalServerError.ResultState();
+            : await StatusCodes.Status500InternalServerError.ResultState(result.ErrorMessage);
     }
 
     /// <summary>
