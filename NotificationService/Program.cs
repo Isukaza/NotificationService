@@ -72,16 +72,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddSingleton<IRabbitMqConnection>(
-    new RabbitMqConnection(
-        RabbitMqConfig.Values.Host,
-        RabbitMqConfig.Values.Queue,
-        RabbitMqConfig.Values.Username,
-        RabbitMqConfig.Values.Password,
-        RabbitMqConfig.Values.Port,
-        RabbitMqConfig.Values.Threads,
-        RabbitMqConfig.Values.PrefetchMessages)
-    );
+var rabbitMqConnection = await new RabbitMqConnectionBuilder()
+    .WithHost(RabbitMqConfig.Values.Host)
+    .WithQueue(RabbitMqConfig.Values.Queue)
+    .WithCredentials(RabbitMqConfig.Values.Username, RabbitMqConfig.Values.Password)
+    .WithPort(RabbitMqConfig.Values.Port)
+    .WithThreads(RabbitMqConfig.Values.Threads)
+    .WithPrefetchMessages(RabbitMqConfig.Values.PrefetchMessages)
+    .BuildAsync();
+
+builder.Services.AddSingleton<IRabbitMqConnection>(rabbitMqConnection);
 
 builder.Services.AddHostedService<RabbitMqListenerManager>();
 builder.Services.AddSingleton<IMessageReceiveManager, MessageReceiveManager>(serviceProvider =>
