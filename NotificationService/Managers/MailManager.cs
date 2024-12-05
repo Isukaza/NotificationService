@@ -7,13 +7,13 @@ using Amazon.SimpleEmailV2.Model;
 using RabbitMQ.Messaging.Models;
 
 using NotificationService.Configuration;
-using NotificationService.DAL.Models;
+using NotificationService.Factories.Interfaces;
 using NotificationService.Managers.Interfaces;
 using NotificationService.Models.Response;
 
 namespace NotificationService.Managers;
 
-public class MailManager : IMailManager
+public class MailManager(IEmailRequestFactory emailRequestFactory) : IMailManager
 {
     #region Fields
 
@@ -24,107 +24,42 @@ public class MailManager : IMailManager
 
     #endregion
 
-    #region Template
+    #region Email Template Management
 
     public async Task<EmailApiResponse<SendEmailResponse>> SendEmailAsync(UserUpdateMessage message)
     {
-        var template = GenerateConfirmationContent(message);
-        var request = new SendEmailRequest
-        {
-            FromEmailAddress = MailConfig.Values.Mail,
-            Destination = new Destination { ToAddresses = [message.UserEmail] },
-            Content = new EmailContent
-            {
-                Template = new Template
-                {
-                    TemplateName = message.ChangeType.ToString(),
-                    TemplateData = template
-                }
-            }
-        };
-
+        var request = emailRequestFactory.CreateSendEmailRequest(message);
         return await ExecuteSesRequestAsync(() => _sesClient.SendEmailAsync(request));
     }
 
     public async Task<EmailApiResponse<GetEmailTemplateResponse>> GetTemplateAsync(string templateName)
     {
-        var request = new GetEmailTemplateRequest
-        {
-            TemplateName = templateName
-        };
-
+        var request = emailRequestFactory.CreateGetEmailTemplateRequest(templateName);
         return await ExecuteSesRequestAsync(() => _sesClient.GetEmailTemplateAsync(request));
     }
 
     public async Task<EmailApiResponse<ListEmailTemplatesResponse>> GetAllTemplatesAsync()
     {
-        var request = new ListEmailTemplatesRequest();
+        var request = emailRequestFactory.CreateListEmailTemplatesRequest();
         return await ExecuteSesRequestAsync(() => _sesClient.ListEmailTemplatesAsync(request));
     }
 
     public async Task<EmailApiResponse<CreateEmailTemplateResponse>> CreateTemplateAsync(
         Models.Request.CreateEmailTemplateRequest createRequest)
     {
-        var request = new CreateEmailTemplateRequest
-        {
-            TemplateName = createRequest.TemplateName,
-            TemplateContent = new EmailTemplateContent
-            {
-                Subject = createRequest.Subject,
-                Html = createRequest.HtmlContent
-            }
-        };
-
+        var request = emailRequestFactory.CreateEmailTemplateRequest(createRequest);
         return await ExecuteSesRequestAsync(() => _sesClient.CreateEmailTemplateAsync(request));
     }
 
     public async Task<EmailApiResponse<DeleteEmailTemplateResponse>> DeleteTemplate(string templateName)
     {
-        var request = new DeleteEmailTemplateRequest
-        {
-            TemplateName = templateName
-        };
-
+        var request = emailRequestFactory.CreateDeleteEmailTemplateRequest(templateName);
         return await ExecuteSesRequestAsync(() => _sesClient.DeleteEmailTemplateAsync(request));
     }
 
     #endregion
 
-    #region Private Methods
-
-    private static string GenerateConfirmationContent(UserUpdateMessage message) =>
-        message.ChangeType switch
-        {
-            TokenType.RegistrationConfirmation =>
-                $"{{\"username\":\"{message.UserName}\", " +
-                $"\"confirmationLink\":\"{message.ConfirmationLink}\"}}",
-
-            TokenType.PasswordReset =>
-                $"{{\"username\":\"{message.UserName}\", " +
-                $"\"confirmationLink\":\"{message.ConfirmationLink}\"}}",
-
-            TokenType.PasswordChange =>
-                $"{{\"username\":\"{message.UserName}\", " +
-                $"\"confirmationLink\":\"{message.ConfirmationLink}\"}}",
-
-            TokenType.UsernameChange =>
-                $"{{\"newUsername\":\"{message.NewValue}\", " +
-                $"\"oldUsername\":\"{message.OldValue}\", " +
-                $"\"confirmationLink\":\"{message.ConfirmationLink}\"}}",
-
-            TokenType.EmailChangeNew =>
-                $"{{\"username\":\"{message.UserName}\", " +
-                $"\"newEmail\":\"{message.NewValue}\", " +
-                $"\"confirmationLink\":\"{message.ConfirmationLink}\"}}",
-
-            TokenType.EmailChangeOld =>
-                $"{{\"username\":\"{message.UserName}\", " +
-                $"\"newEmail\":\"{message.NewValue}\", " +
-                $"\"oldEmail\":\"{message.OldValue}\", " +
-                $"\"confirmationLink\":\"{message.ConfirmationLink}\"}}",
-
-            _ => string.Empty
-        };
+    #region Request Execution
 
     private static async Task<EmailApiResponse<T>> ExecuteSesRequestAsync<T>(Func<Task<T>> action)
         where T : AmazonWebServiceResponse, new()

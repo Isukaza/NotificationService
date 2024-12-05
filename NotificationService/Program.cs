@@ -11,6 +11,8 @@ using RabbitMQ.Messaging;
 using Helpers;
 using NotificationService.Configuration;
 using NotificationService.DAL.Roles;
+using NotificationService.Factories;
+using NotificationService.Factories.Interfaces;
 using NotificationService.Managers;
 using NotificationService.Managers.Interfaces;
 
@@ -87,11 +89,14 @@ builder.Services.AddHostedService<RabbitMqListenerManager>();
 builder.Services.AddSingleton<IMessageReceiveManager, MessageReceiveManager>(serviceProvider =>
 {
     var connection = serviceProvider.GetRequiredService<IRabbitMqConnection>();
-    var mailManager = new MailManager();
+    var emailRequestFactory = new SendEmailRequestFactory();
+    var mailManager = new MailManager(emailRequestFactory);
+    
     return new MessageReceiveManager(connection, mailManager);
 });
 
-builder.Services.AddScoped<IMailManager, MailManager>();
+builder.Services.AddTransient<IMailManager, MailManager>();
+builder.Services.AddTransient<IEmailRequestFactory, SendEmailRequestFactory>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
